@@ -1,0 +1,108 @@
+﻿@{
+    ViewData["Title"] = "XSLT Реформатор";
+}
+
+@model XmlSourceFileModel
+
+<div class="container">
+    <h1>@ViewData["Title"]</h1>
+
+    <div class="row mt-4">
+        <!-- Файл Data1.xml -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    Data1.xml
+                </div>
+                <div class="card-body">
+                    <pre class="xml-content">@Model.Data1Xml</pre>
+                    <button onclick="transformXml('Data1.xml')" class="btn btn-success mt-2">
+                        Преобразовать
+                    </button>
+                    <div id="result1" class="result-area mt-2"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Файл Data2.xml -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    Data2.xml
+                </div>
+                <div class="card-body">
+                    <pre class="xml-content">@Model.Data2Xml</pre>
+                    <button onclick="transformXml('Data2.xml')" class="btn btn-success mt-2">
+                        Преобразовать
+                    </button>
+                    <div id="result2" class="result-area mt-2"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function transformXml(fileName) {
+            const resultDiv = document.getElementById(`result${fileName.includes('1') ? '1' : '2'}`);
+            resultDiv.innerHTML = '<div class="text-info">Обработка... Пожалуйста, подождите</div>';
+
+            // Блокируем все кнопки на время обработки
+            document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+
+            fetch('@Url.Action("Transform", "Employees")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ XmlFileName: fileName })
+            })
+                .then(response => {
+                    if (!response.ok) throw new Error(`Ошибка сервера: ${response.status}`);
+                    return response.text();
+                })
+                .then(data => {
+                    resultDiv.innerHTML = `<pre class="bg-light p-3">${escapeHtml(data)}</pre>`;
+                })
+                .catch(error => {
+                    resultDiv.innerHTML = `<div class="alert alert-danger">Ошибка: ${escapeHtml(error.message)}</div>`;
+                })
+                .finally(() => {
+                    document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+                });
+        }
+
+        function escapeHtml(unsafe) {
+            return unsafe
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+    </script>
+}
+
+<style>
+    .xml-content {
+        max-height: 200px;
+        overflow-y: auto;
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #dee2e6;
+    }
+
+    .result-area {
+        min-height: 150px;
+        border: 1px solid #dee2e6;
+        border-radius: 5px;
+        padding: 10px;
+        background-color: #f8f9fa;
+    }
+
+    .card {
+        height: 100%;
+    }
+</style>
