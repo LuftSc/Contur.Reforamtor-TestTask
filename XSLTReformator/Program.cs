@@ -1,4 +1,7 @@
-using XSLTReformator.Abstracts;
+using FluentValidation;
+using XSLTReformator.Abstractions;
+using XSLTReformator.Configurations;
+using XSLTReformator.Contracts;
 using XSLTReformator.Services;
 
 namespace XSLTReformator
@@ -12,9 +15,18 @@ namespace XSLTReformator
             // Add services to the container.
             builder.Services.AddControllersWithViews();
 
-            builder.Services.AddScoped<IXSLTProcessor, XSLTProcessor>();
-            builder.Services.AddScoped<IXMLService, XMLService>();
+            builder.Services.Configure<XmlFileSettings>
+                (builder.Configuration.GetSection(nameof(XmlFileSettings)));
+            builder.Services.Configure<XsltFileSettings>
+                (builder.Configuration.GetSection(nameof(XsltFileSettings)));
 
+            builder.Services.AddScoped<IXsltProcessor, XsltProcessor>();
+            builder.Services.AddScoped<IXmlFileService, XmlFileService>();
+            builder.Services.AddScoped<IXmlModificationService, XmlModificationService>();
+            builder.Services.AddScoped<IXmlTransformationService, XmlTransformationService>();
+
+            builder.Services.AddScoped<IValidator<TransformRequest>, TransformRequestValidator>();
+            
             var app = builder.Build();
 
             // Configure the HTTP request pipeline.

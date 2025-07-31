@@ -1,6 +1,6 @@
-﻿namespace XSLTReformator.Abstracts
+﻿namespace XSLTReformator.Abstractions
 {
-    public interface IXSLTProcessor
+    public interface IXsltProcessor
     {
         Task<string> TransformAsync(string xmlDataPath, string xsltPath, CancellationToken cancellationToken = default);
     }

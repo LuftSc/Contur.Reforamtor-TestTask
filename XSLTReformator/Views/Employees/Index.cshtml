@@ -15,9 +15,9 @@
                     Data1.xml
                 </div>
                 <div class="card-body">
-                    <pre class="xml-content">@Model.Data1Xml</pre>
+                    <pre class="xml-content" id="source-Data1.xml">@Model.Data1Xml</pre>
                     <button onclick="transformXml('Data1.xml')" class="btn btn-success mt-2">
-                        Преобразовать
+                        Запустить XSLT-преобразование
                     </button>
                     <div id="result1" class="result-area mt-2"></div>
                 </div>
@@ -31,9 +31,9 @@
                     Data2.xml
                 </div>
                 <div class="card-body">
-                    <pre class="xml-content">@Model.Data2Xml</pre>
+                    <pre class="xml-content" id="source-Data2.xml">@Model.Data2Xml</pre>
                     <button onclick="transformXml('Data2.xml')" class="btn btn-success mt-2">
-                        Преобразовать
+                        Запустить XSLT-преобразование
                     </button>
                     <div id="result2" class="result-area mt-2"></div>
                 </div>
@@ -46,6 +46,7 @@
     <script>
         function transformXml(fileName) {
             const resultDiv = document.getElementById(`result${fileName.includes('1') ? '1' : '2'}`);
+            const sourceDiv = document.getElementById(`source-${fileName}`)
             resultDiv.innerHTML = '<div class="text-info">Обработка... Пожалуйста, подождите</div>';
 
             // Блокируем все кнопки на время обработки
@@ -60,10 +61,11 @@
             })
                 .then(response => {
                     if (!response.ok) throw new Error(`Ошибка сервера: ${response.status}`);
-                    return response.text();
+                    return response.json() 
                 })
                 .then(data => {
-                    resultDiv.innerHTML = `<pre class="bg-light p-3">${escapeHtml(data)}</pre>`;
+                    resultDiv.innerHTML = `<pre class="bg-light p-3">${escapeHtml(data.resultXml)}</pre>`
+                    sourceDiv.innerHTML = `<pre class="bg-light p-3">${escapeHtml(data.sourceXml)}</pre>`
                 })
                 .catch(error => {
                     resultDiv.innerHTML = `<div class="alert alert-danger">Ошибка: ${escapeHtml(error.message)}</div>`;

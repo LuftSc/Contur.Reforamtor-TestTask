@@ -1,14 +1,23 @@
-﻿using System.Diagnostics;
-using XSLTReformator.Abstracts;
+﻿using Microsoft.Extensions.Options;
+using System.Diagnostics;
+using XSLTReformator.Abstractions;
+using XSLTReformator.Configurations;
 
 namespace XSLTReformator.Services
 {
-    public class XSLTProcessor : IXSLTProcessor
+    public class XsltProcessor : IXsltProcessor
     {
+        private readonly XmlFileSettings _xmlSettings;
+
+        public XsltProcessor(IOptions<XmlFileSettings> xmlSettings)
+        {
+            _xmlSettings = xmlSettings.Value;
+        }
         public async Task<string> TransformAsync(string xmlDataPath, string xsltPath
             , CancellationToken cancellationToken = default)
         {
-            var resultFile = Path.Combine(Directory.GetCurrentDirectory(), "XML/Employees.xml");
+            var resultFile = Path.Combine(Directory.GetCurrentDirectory()
+                , $"{_xmlSettings.BasePath}/Employees.xml");
 
             using var process = new Process()
             {

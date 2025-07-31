@@ -1,6 +1,7 @@
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics;
-using XSLTReformator.Abstracts;
+using XSLTReformator.Abstractions;
 using XSLTReformator.Contracts;
 using XSLTReformator.Models;
 
@@ -8,50 +9,41 @@ namespace XSLTReformator.Controllers
 {
     public class EmployeesController : Controller
     {
-        private readonly IXSLTProcessor _processor;
-        private readonly IXMLService _xmlService;
+        private readonly IXmlTransformationService _transformationService;
+        private readonly IXmlFileService _xmlFileService;
 
-        public EmployeesController(IXSLTProcessor processor, IXMLService xmlService)
+        public EmployeesController(IXmlTransformationService transformationService
+            , IXmlFileService xmlFileService)
         {
-            _processor = processor;
-            _xmlService = xmlService;
+            _transformationService = transformationService;
+            _xmlFileService = xmlFileService;
         }
 
         [HttpPost("[action]")]
-        public async Task<IActionResult> Transform([FromBody] TransformRequest request
+        public async Task<IActionResult> Transform(
+            [FromBody] TransformRequest request
+            , [FromServices] IValidator<TransformRequest> validator
             , CancellationToken cancellationToken = default)
         {
+            var validationResult = await validator.ValidateAsync(request, cancellationToken);
+            if (!validationResult.IsValid) return BadRequest(validationResult.Errors);
+
             try
             {
-                var xmlDataPath = Path.Combine(Directory.GetCurrentDirectory(), $"XML/{request.XmlFileName}");
-                var xsltPath = Path.Combine(Directory.GetCurrentDirectory(), "XSLT/transform-employee-data.xslt");
+                var result = await _transformationService
+                    .TransformAndUpdateSourceAsync(request.XmlFileName, cancellationToken);
 
-                var resultXML = await _processor.TransformAsync(xmlDataPath, xsltPath, cancellationToken);
-
-                return Content(resultXML, "text/xml");
+                return Json(result);
             }
             catch (Exception error)
             {
                 return StatusCode(500, error.Message);
             }
-           
         }
 
         public async Task<IActionResult> Index()
         {
-            var xmlData1Path = Path.Combine(Directory.GetCurrentDirectory(), "XML/Data1.xml");
-            var xmlData2Path = Path.Combine(Directory.GetCurrentDirectory(), "XML/Data2.xml");
-
-            var readFile1Task = _xmlService.ReadFileAsync(xmlData1Path);
-            var readFile2Task = _xmlService.ReadFileAsync(xmlData2Path);
-
-            await Task.WhenAll(readFile1Task, readFile2Task);
-
-            var model = new XmlSourceFileModel()
-            {
-                Data1Xml = await readFile1Task,
-                Data2Xml = await readFile2Task
-            };
+            var model = await _xmlFileService.GetSourceFilesAsync();
 
             return View(model);
         }
